@@ -1,4 +1,25 @@
 
 
 
-env variables
+- env variables
+DB_HOST
+DB_NAME
+DB_PASSWORD
+DB_PORT
+DB_USER
+EMAIL_PASSWORD
+EMAIL_PORT
+EMAIL_SENDER
+EMAIL_SMTP
+
+- mocks
+mockgen -destination internal/repository/mocks/mockSummaryRepository.go -package mocks stori-summary-account/summary/summary/internal/repository SummaryRepository
+
+
+- Unit test
+	go test ./...
+	go test -cover ./...
+	go test -coverprofile c.out ./...
+	go tool cover -html c.out
+
+    screenshot de reporte coverage

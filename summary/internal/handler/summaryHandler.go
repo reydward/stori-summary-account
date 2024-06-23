@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"stori-summary-account/summary/summary/internal/email"
 	"stori-summary-account/summary/summary/internal/model"
@@ -12,8 +13,12 @@ type SummaryHandler struct {
 	repo repository.SummaryRepository
 }
 
-func NewSummaryHandler(repo *repository.SummaryRepository) *SummaryHandler {
-	return &SummaryHandler{repo: *repo}
+func NewSummaryHandler(repo repository.SummaryRepository) *SummaryHandler {
+	return &SummaryHandler{repo: repo}
+}
+
+func (h *SummaryHandler) Health(w http.ResponseWriter, req *http.Request) {
+	fmt.Fprintf(w, "<h1>The Lambda Summary is working!<h1>\n")
 }
 
 func (h *SummaryHandler) Summary(writer http.ResponseWriter, request *http.Request) {
@@ -27,6 +32,20 @@ func (h *SummaryHandler) Summary(writer http.ResponseWriter, request *http.Reque
 	user, err := h.repo.GetUser(payload.UserID)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if user == nil {
+		http.Error(writer, "User not found", http.StatusNotFound)
+		return
+	}
+
+	account, err := h.repo.GetAccountInfo(payload.AccountID)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if account == nil {
+		http.Error(writer, "Account not found", http.StatusNotFound)
 		return
 	}
 

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"stori-summary-account/summary/summary/internal/model"
 )
@@ -11,11 +12,33 @@ type summaryRepositoryImpl struct {
 }
 
 func (r *summaryRepositoryImpl) GetUser(userID int) (*model.User, error) {
-	return &model.User{
-		ID:    userID,
-		Name:  "John Doe",
-		Email: "info@brainsmartsolutions.com",
-	}, nil
+	var user model.User
+	query := "SELECT * FROM users WHERE id = $1"
+
+	err := r.db.QueryRow(query, userID).Scan(&user.ID, &user.Name, &user.Email)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("error al obtener el usuario: %v", err)
+	}
+
+	return &user, nil
+}
+
+func (r *summaryRepositoryImpl) GetAccountInfo(accountID int) (*model.Account, error) {
+	var account model.Account
+	query := "SELECT * FROM accounts WHERE id = $1"
+
+	err := r.db.QueryRow(query, accountID).Scan(&account.ID, &account.UserID, &account.Name)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("error al obtener información de la cuenta: %v", err)
+	}
+
+	return &account, nil
 }
 
 func (r *summaryRepositoryImpl) GetAccountAverageDebit(accountID int) (float32, error) {
@@ -102,7 +125,7 @@ func (s summaryRepositoryImpl) GetAccountTotalBalance(accountID int) (float32, e
 		if err == sql.ErrNoRows {
 			return 0, nil
 		}
-		return 0, fmt.Errorf("error getting the total amount: %v", err)
+		return 0, fmt.Errorf("error getting the total balance: %v", err)
 	}
 
 	return totalBalance, nil

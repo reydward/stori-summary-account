@@ -17,8 +17,6 @@ func NewPostgresConnection() (*sql.DB, error) {
 		"password=%s dbname=%s",
 		host, port, user, password, dbname)
 
-	fmt.Println(psqlInfo)
-
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		return nil, err
