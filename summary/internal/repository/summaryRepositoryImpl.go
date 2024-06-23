@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"stori-summary-account/summary/summary/internal/model"
+	"summary/internal/model"
 )
 
 type summaryRepositoryImpl struct {

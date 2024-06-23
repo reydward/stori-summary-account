@@ -1,6 +1,6 @@
 package repository
 
-import "stori-summary-account/summary/summary/internal/model"
+import "summary/internal/model"
 
 type SummaryRepository interface {
 	GetUser(userID int) (*model.User, error)

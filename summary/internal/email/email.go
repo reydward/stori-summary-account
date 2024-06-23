@@ -4,10 +4,10 @@ import (
 	"fmt"
 	gomail "gopkg.in/gomail.v2"
 	"os"
-	"stori-summary-account/summary/summary/internal/constants"
-	"stori-summary-account/summary/summary/internal/model"
 	"strconv"
 	"strings"
+	"summary/internal/constants"
+	"summary/internal/model"
 )
 
 func SendEmail(summary *model.Summary) (string, error) {
