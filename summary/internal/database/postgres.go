@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
+	"log"
 	"os"
 )
 
@@ -18,12 +19,15 @@ func NewPostgresConnection() (*sql.DB, error) {
 		host, port, user, password, dbname)
 
 	db, err := sql.Open("postgres", psqlInfo)
+	log.Printf("NewPostgresConnection()	db: %v", db)
 	if err != nil {
+		log.Printf("Error getting the db connection %s", err.Error())
 		return nil, err
 	}
 
 	err = db.Ping()
 	if err != nil {
+		log.Printf("Error pinging the db %s", err.Error())
 		return nil, err
 	}
 

@@ -83,6 +83,7 @@ func (h *SummaryHandler) Summary(writer http.ResponseWriter, request *http.Reque
 	//Sending the email
 	statusMessage, err := email.SendEmail(summary)
 	summary.StatusMessage = statusMessage
+
 	//Setting the response
 	writer.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(writer).Encode(summary)

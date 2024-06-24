@@ -3,6 +3,7 @@ package email
 import (
 	"fmt"
 	gomail "gopkg.in/gomail.v2"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -11,6 +12,8 @@ import (
 )
 
 func SendEmail(summary *model.Summary) (string, error) {
+	log.Printf("SendEmail.summary: %v", summary)
+
 	mail := gomail.NewMessage()
 
 	body := buildBody(summary)
@@ -29,6 +32,8 @@ func SendEmail(summary *model.Summary) (string, error) {
 	if err := dialer.DialAndSend(mail); err != nil {
 		return "An error has happened sending the email", err
 	}
+
+	log.Printf("Email sent successfully to %s", summary.User.Email)
 
 	return "Email sent successfully", nil
 }

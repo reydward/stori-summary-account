@@ -55,12 +55,17 @@ func lambdaHandler(ctx context.Context, request events.APIGatewayProxyRequest) (
 
 func main() {
 	//	lambda.Start(lambdaHandler)
+	db, err := database.NewPostgresConnection()
+	if err != nil {
+		fmt.Printf("Failed to connect to the database: %v\n", err)
+		return
+	}
+	defer db.Close()
+	loadDataRepository := repository.NewLoadDataRepository(db)
+	loadDataHandler := handler.NewLoadDataHandler(loadDataRepository)
 
-	summaryRepository := repository.NewSummaryRepository(db)
-	summaryHandler := handler.NewSummaryHandler(summaryRepository)
-
-	http.HandleFunc("/", summaryHandler.Health)
-	http.HandleFunc("/summary", summaryHandler.Summary)
-	http.ListenAndServe(":3000", nil)
+	http.HandleFunc("/", loadDataHandler.Health)
+	http.HandleFunc("/load-data", loadDataHandler.LoadData)
+	http.ListenAndServe(":4000", nil)
 
 }

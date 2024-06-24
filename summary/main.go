@@ -2,37 +2,31 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
 	"log"
-	"net/http"
 	"summary/internal/database"
 	"summary/internal/email"
-	"summary/internal/handler"
 	"summary/internal/model"
 	"summary/internal/repository"
 )
 
-var db *sql.DB
-
-func init() {
+func lambdaHandler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	db, err := database.NewPostgresConnection()
 	if err != nil {
-		fmt.Printf("Failed to connect to the database: %v\n", err)
-		return
+		log.Printf("Failed to connect to the database: %v\n", err)
 	}
 	defer db.Close()
-}
 
-func lambdaHandler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	log.Printf("Starting lambda summary function")
-
+	log.Printf("Request.HTTPMethod: %v", request.HTTPMethod)
 	var response string
 
-	if request.HTTPMethod == "POST" && request.Path == "/summary" {
+	if request.HTTPMethod == "POST" {
+		log.Printf("lambdaHandler.db: %v", db)
 		repo := repository.NewSummaryRepository(db)
 
 		//Getting the payload
@@ -58,6 +52,7 @@ func lambdaHandler(ctx context.Context, request events.APIGatewayProxyRequest) (
 		//Sending the email
 		statusMessage, err := email.SendEmail(&summary)
 		summary.StatusMessage = statusMessage
+		log.Printf("Summary: %v", summary)
 
 		//Setting the response
 		summaryJSON, err := json.Marshal(summary)
@@ -67,18 +62,21 @@ func lambdaHandler(ctx context.Context, request events.APIGatewayProxyRequest) (
 		response = string(summaryJSON)
 	}
 
+	log.Printf("Response: %v", response)
+
 	var apigwresponse = &events.APIGatewayProxyResponse{
 		StatusCode: 200,
 		Body:       response,
 	}
-
 	apigwresponse.Headers = make(map[string]string)
 	apigwresponse.Headers["Access-Control-Allow-Origin"] = "*"
-	apigwresponse.Headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
+	apigwresponse.Headers["Access-Control-Allow-Methods"] = "POST,OPTIONS"
 	return *apigwresponse, nil
 }
 
 func getSummaryData(repo repository.SummaryRepository, payload model.RequestPayload) (model.Summary, error) {
+	log.Printf("getSummaryData.payload: %v", payload)
+
 	var summary = model.Summary{}
 	var err error
 	var isThereError bool
@@ -137,24 +135,24 @@ func getSummaryData(repo repository.SummaryRepository, payload model.RequestPayl
 		AverageCreditAmount:  averageCreditAmount,
 	}
 
+	log.Printf("getSummaryData.summary: %v", summary)
 	return summary, nil
 }
 
 func main() {
-	//	lambda.Start(lambdaHandler)
+	lambda.Start(lambdaHandler)
 
-	db, err := database.NewPostgresConnection()
-	if err != nil {
-		fmt.Printf("Failed to connect to the database: %v\n", err)
-		return
-	}
-	defer db.Close()
+	/*	db, err := database.NewPostgresConnection()
+		if err != nil {
+			fmt.Printf("Failed to connect to the database: %v\n", err)
+			return
+		}
+		defer db.Close()
 
-	summaryRepository := repository.NewSummaryRepository(db)
-	summaryHandler := handler.NewSummaryHandler(summaryRepository)
+		summaryRepository := repository.NewSummaryRepository(db)
+		summaryHandler := handler.NewSummaryHandler(summaryRepository)
 
-	http.HandleFunc("/", summaryHandler.Health)
-	http.HandleFunc("/summary", summaryHandler.Summary)
-	http.ListenAndServe(":3000", nil)
-
+		http.HandleFunc("/", summaryHandler.Health)
+		http.HandleFunc("/summary", summaryHandler.Summary)
+		http.ListenAndServe(":3000", nil)*/
 }
