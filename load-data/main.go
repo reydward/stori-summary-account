@@ -16,15 +16,6 @@ import (
 
 var db *sql.DB
 
-func init() {
-	db, err := database.NewPostgresConnection()
-	if err != nil {
-		fmt.Printf("Failed to connect to the database: %v\n", err)
-		return
-	}
-	defer db.Close()
-}
-
 func lambdaHandler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	log.Printf("Starting lambda summary function")
 

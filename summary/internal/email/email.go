@@ -40,6 +40,8 @@ func SendEmail(summary *model.Summary) (string, error) {
 
 func buildBody(summary *model.Summary) string {
 	userName := summary.User.Name
+	accountName := summary.Account.Name
+	accountID := fmt.Sprintf("%d", summary.Account.ID)
 	totalBalance := fmt.Sprintf("%f", summary.TotalBalance)
 	averageDebitAmount := fmt.Sprintf("%f", summary.AverageDebitAmount)
 	averageCreditAmount := fmt.Sprintf("%f", summary.AverageCreditAmount)
@@ -72,7 +74,7 @@ func buildBody(summary *model.Summary) string {
 					<h1>Account summary</h1>
 				</div>
 				<div class="summary">
-					Dear ` + userName + `, here is a summary of your account.
+					Dear ` + userName + `, here is a summary of your ` + accountName + ` number ` + accountID + `.
 				</div>
 				<table>
 					<tr>

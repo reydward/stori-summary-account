@@ -22,6 +22,7 @@ func (h *SummaryHandler) Health(w http.ResponseWriter, req *http.Request) {
 }
 
 func (h *SummaryHandler) Summary(writer http.ResponseWriter, request *http.Request) {
+	// Getting the payload
 	var payload model.RequestPayload
 	err := json.NewDecoder(request.Body).Decode(&payload)
 	if err != nil {
@@ -75,6 +76,7 @@ func (h *SummaryHandler) Summary(writer http.ResponseWriter, request *http.Reque
 	//Building the summary object
 	summary := &model.Summary{
 		User:                 user,
+		Account:              account,
 		TotalBalance:         totalBalance,
 		NumberOfTransactions: numberOfTransactions,
 		AverageDebitAmount:   averageDebitAmount,

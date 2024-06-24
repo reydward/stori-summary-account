@@ -6,10 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
 	"log"
+	"net/http"
 	"summary/internal/database"
 	"summary/internal/email"
+	"summary/internal/handler"
 	"summary/internal/model"
 	"summary/internal/repository"
 )
@@ -129,6 +130,7 @@ func getSummaryData(repo repository.SummaryRepository, payload model.RequestPayl
 	//Building the summary object
 	summary = model.Summary{
 		User:                 user,
+		Account:              account,
 		TotalBalance:         totalBalance,
 		NumberOfTransactions: numberOfTransactions,
 		AverageDebitAmount:   averageDebitAmount,
@@ -140,19 +142,19 @@ func getSummaryData(repo repository.SummaryRepository, payload model.RequestPayl
 }
 
 func main() {
-	lambda.Start(lambdaHandler)
+	//	lambda.Start(lambdaHandler)
 
-	/*	db, err := database.NewPostgresConnection()
-		if err != nil {
-			fmt.Printf("Failed to connect to the database: %v\n", err)
-			return
-		}
-		defer db.Close()
+	db, err := database.NewPostgresConnection()
+	if err != nil {
+		fmt.Printf("Failed to connect to the database: %v\n", err)
+		return
+	}
+	defer db.Close()
 
-		summaryRepository := repository.NewSummaryRepository(db)
-		summaryHandler := handler.NewSummaryHandler(summaryRepository)
+	summaryRepository := repository.NewSummaryRepository(db)
+	summaryHandler := handler.NewSummaryHandler(summaryRepository)
 
-		http.HandleFunc("/", summaryHandler.Health)
-		http.HandleFunc("/summary", summaryHandler.Summary)
-		http.ListenAndServe(":3000", nil)*/
+	http.HandleFunc("/", summaryHandler.Health)
+	http.HandleFunc("/summary", summaryHandler.Summary)
+	http.ListenAndServe(":3000", nil)
 }

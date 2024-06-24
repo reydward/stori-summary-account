@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"load-data/internal/model"
 	"load-data/internal/repository"
@@ -27,7 +28,7 @@ func (h *LoadDataHandler) Health(w http.ResponseWriter, request *http.Request) {
 }
 
 func (h *LoadDataHandler) LoadData(writer http.ResponseWriter, request *http.Request) {
-	//Getting the payload
+	// Getting the payload
 	var payload model.RequestPayload
 	err := json.NewDecoder(request.Body).Decode(&payload)
 	if err != nil {
@@ -35,70 +36,72 @@ func (h *LoadDataHandler) LoadData(writer http.ResponseWriter, request *http.Req
 		return
 	}
 
-	//Load the csv file
+	//Open the CSV file
 	file, err := os.Open(payload.FilePath)
 	if err != nil {
-		log.Fatalf("Failed to open file: %v", err)
+		panic(err)
 	}
 	defer file.Close()
 
-	//Read the csv file
+	//Read the CSV file
 	reader := csv.NewReader(file)
-	records, err := reader.ReadAll()
+	transactionsCSV, err := reader.ReadAll()
 	if err != nil {
-		log.Fatalf("Failed to read CSV file: %v", err)
+		panic(err)
 	}
 
-	//Insert every csv file row in the db table
-	year := time.Now().Year()
+	//Write every record in the PostgreSQL database table
 	var wg sync.WaitGroup
-	transactionChannel := make(chan model.Transaction)
-	go func() {
-		for transaction := range transactionChannel {
-			fmt.Printf("ID: %d, Date: %s, Amount: %.2f\n", transaction.ID, transaction.Date.Format("2006-01-02"), transaction.Amount)
-		}
-	}()
-	for _, record := range records[1:] { //without th header
+	resultChannel := make(chan error)
+	accountID := payload.AccountID
+
+	for _, transactionCSV := range transactionsCSV[1:] {
+		transactionID, _ := strconv.Atoi(transactionCSV[0])
+		date := transactionCSV[1]
+		amount, _ := strconv.ParseFloat(transactionCSV[2], 64)
+		transaction := model.Transaction{ID: transactionID, AccountID: accountID, Date: date, Amount: amount}
+
 		wg.Add(1)
-		go func(record []string) {
-			defer wg.Done()
-			transaction, err := processTransaction(record, year)
-			if err != nil {
-				log.Printf("Failed to process record: %v", err)
-				return
-			}
-			transactionChannel <- transaction
-		}(record)
+		go processTransaction(h.repo, transaction, &wg, resultChannel)
 	}
 
-	wg.Wait()
-	close(transactionChannel)
+	go func() {
+		wg.Wait()
+		close(resultChannel)
+	}()
+
+	responseMessage := "Data loaded successfully"
+	for result := range resultChannel {
+		if result != nil {
+			log.Printf("Error: %v", result)
+			responseMessage = "Failed to load some data, please check the logs for more information"
+		}
+	}
 
 	//Setting the response
 	writer.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(writer).Encode("")
+	json.NewEncoder(writer).Encode(struct{ Message string }{responseMessage})
 }
 
-func processTransaction(record []string, year int) (model.Transaction, error) {
-	id, err := strconv.Atoi(record[0])
+func processTransaction(repo repository.LoadDataRepository, transaction model.Transaction, wg *sync.WaitGroup, resultChannel chan<- error) {
+	defer wg.Done()
+
+	date, err := time.Parse("1/2", transaction.Date)
 	if err != nil {
-		return model.Transaction{}, fmt.Errorf("invalid ID: %v", err)
+		log.Printf("Failed to parse the date: %v", err)
 	}
 
-	date, err := time.Parse("1/2", record[1])
-	if err != nil {
-		return model.Transaction{}, fmt.Errorf("invalid date: %v", err)
-	}
-
+	year := time.Now().Year()
 	date = date.AddDate(year, 0, 0)
-	amount, err := strconv.ParseFloat(record[2], 64)
+	transaction.Date = date.Format("2006-01-02")
+
+	fmt.Printf("ID: %d, AccountID: %d, Date: %s, Transaction: %.2f\n", transaction.ID, transaction.AccountID, transaction.Date, transaction.Amount)
+
+	//Insert the transaction in the database
+	_, err = repo.InsertTransaction(transaction)
 	if err != nil {
-		return model.Transaction{}, fmt.Errorf("invalid amount: %v", err)
+		resultChannel <- errors.New("Failed to insert the transaction with ID: " + strconv.Itoa(transaction.ID) + " error: " + err.Error())
 	}
 
-	return model.Transaction{
-		ID:     id,
-		Date:   date,
-		Amount: amount,
-	}, nil
+	resultChannel <- nil
 }

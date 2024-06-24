@@ -2,6 +2,7 @@ package model
 
 type Summary struct {
 	User                 *User                   `json:"user"`
+	Account              *Account                `json:"account"`
 	TotalBalance         float32                 `json:"totalBalance"`
 	NumberOfTransactions []*NumberOfTransactions `json:"numberOfTransactions"`
 	AverageDebitAmount   float32                 `json:"averageDebitAmount"`
