@@ -142,8 +142,11 @@ func getSummaryData(repo repository.SummaryRepository, payload model.RequestPayl
 }
 
 func main() {
-	//	lambda.Start(lambdaHandler)
+	//lambda.Start(lambdaHandler)
+	httpServerExecution()
+}
 
+func httpServerExecution() {
 	db, err := database.NewPostgresConnection()
 	if err != nil {
 		fmt.Printf("Failed to connect to the database: %v\n", err)
