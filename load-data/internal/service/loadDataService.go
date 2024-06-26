@@ -55,7 +55,6 @@ func ProcessTransactions(payload model.RequestPayload, repository repository.Loa
 	if err != nil {
 		log.Fatalf("error deleting the file from S3: %v", err)
 	}
-
 	return responseMessage, errorResult
 }
 

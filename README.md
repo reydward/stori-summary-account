@@ -18,6 +18,10 @@ This API process a csv transactions file and send summary information to a user 
 # API REST
 ### `POST /load-data`
 Endpoint to load a csv file with transactions. The request should be a `multipart/form-data` with a file field and the account id. 
+
+The request should have the "transactionFile" and the "accountId" like the image below shows.
+![img.png](LoadData.png)
+
 The response shows the result of the process.
 
 ```json
@@ -25,6 +29,9 @@ The response shows the result of the process.
   "Message": "Data loaded successfully"
 }
 ```
+
+You can test this endpoint here: https://9sfcdtxqu4.execute-api.us-east-1.amazonaws.com/dev/load-data
+
 
 ### `POST /summary`
 This endpoint sends an email with the summary of the transactions for the account id. This is how the email looks like:
